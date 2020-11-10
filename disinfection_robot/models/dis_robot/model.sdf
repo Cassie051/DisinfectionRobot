@@ -2,7 +2,7 @@
 <sdf version='1.4'>
   <model name="dis_robot">
     <static>true</static>
-        <link name='chassis'>
+    <link name='chassis'>
         <pose>0 0 .195 0 0 0</pose>
         <collision name='collision'>
             <geometry>
@@ -55,9 +55,9 @@
             </sphere>
           </geometry>
         </visual>
-      </link>
+    </link>
 
-        <link name="left_wheel">
+    <link name="left_wheel">
         <pose>0 0.3 0.1 0 1.5707 1.5707</pose>
         <collision name="collision">
           <geometry>
@@ -75,9 +75,9 @@
             </cylinder>
           </geometry>
         </visual>
-      </link>
+    </link>
 
-      <link name="right_wheel">
+    <link name="right_wheel">
         <pose>0 -0.3 0.1 0 1.5707 1.5707</pose>
         <collision name="collision">
           <geometry>
@@ -95,7 +95,7 @@
             </cylinder>
           </geometry>
         </visual>
-      </link>
+    </link>
         
     <link name="UVlamp">
         <collision name="collision">
@@ -238,5 +238,59 @@
           </geometry>
         </visual>
       </link>
+      
+    
+    <include>
+      <uri>model://hokuyo</uri>
+      <pose>0.2 0 0.2 0 0 0</pose>
+    </include>
+    <joint name="hokuyo_joint" type="fixed">
+      <child>hokuyo::link</child>
+      <parent>chassis</parent>
+    </joint>
+    
+    <joint type="revolute" name="left_wheel_hinge">
+        <pose>0 0 -0.03 0 0 0</pose>
+        <child>left_wheel</child>
+        <parent>chassis</parent>
+        <axis>
+            <xyz>0 1 0</xyz>
+        </axis>
+    </joint>
+
+    <joint type="revolute" name="right_wheel_hinge">
+        <pose>0 0 0.03 0 0 0</pose>
+        <child>right_wheel</child>
+        <parent>chassis</parent>
+        <axis>
+            <xyz>0 1 0</xyz>
+        </axis>
+    </joint>    
+<!--     
+    <plugin
+    filename="libignition-gazebo-diff-drive-system.so"
+    name="ignition::gazebo::systems::DiffDrive">
+        <left_joint>left_wheel_joint</left_joint>
+        <right_joint>right_wheel_joint</right_joint>
+        <wheel_separation>0.6</wheel_separation>
+        <wheel_radius>0.1</wheel_radius>
+        <odom_publish_frequency>1</odom_publish_frequency>
+        <topic>cmd_vel</topic>
+    </plugin> -->
+
+    <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>20</updateRate>
+        <leftJoint>left_wheel_hinge</leftJoint>
+        <rightJoint>right_wheel_hinge</rightJoint>
+        <wheelSeparation>0.6</wheelSeparation>
+        <wheelDiameter>0.05</wheelDiameter>
+        <torque>20</torque>
+        <commandTopic>cmd_vel</commandTopic>
+        <odometryTopic>odom</odometryTopic>
+        <odometryFrame>odom</odometryFrame>
+        <robotBaseFrame>base_footprint</robotBaseFrame>
+    </plugin>
+          
   </model>
 </sdf>
