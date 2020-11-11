@@ -290,7 +290,11 @@
         <odometryTopic>odom</odometryTopic>
         <odometryFrame>odom</odometryFrame>
         <robotBaseFrame>base_footprint</robotBaseFrame>
-    </plugin>
-          
+        <odometrySource>1</odometrySource>
+        <publishWheelTF>true</publishWheelTF>
+        <publishOdom>true</publishOdom>
+        <publishWheelJointState>true</publishWheelJointState>
+        <legacyMode>false</legacyMode>
+    </plugin> 
   </model>
 </sdf>
