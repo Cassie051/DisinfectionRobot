@@ -9,8 +9,13 @@ project(m2wr_description)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  urdf
+  xacro
+  gazebo_ros
+  controller_manager
+  joint_state_controller
+  robot_state_publisher
 )
-
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
