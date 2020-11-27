@@ -10,15 +10,12 @@
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
   <!-- gmapping -->
-  <!-- <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping">
+  <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping">
     <param name="base_frame" value="link_chassis"/>
-  </node>   -->
+  </node>  
 
   <!--Map Server-->
   <arg name="map_file" default="$(find motion_plan)/maps/map.yaml"/>
-  <!-- <arg name="scan_topic"  default="/m2wr/laser/scan" />
-  <arg name="base_frame"  default="link_chassis"/>
-  <arg name="odom_frame"  default="odom"/> -->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
   
   <!--RViz-->
