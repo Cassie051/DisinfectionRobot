@@ -2,7 +2,7 @@
 
 import rospy
 import numpy as np
-from nav_msgs.msg import OccupancyGrid, MapMetaData
+from nav_msgs.msg import OccupancyGrid, MapMetaData, Odometry
 from nav_msgs.srv import GetMap
 
 class Map:
@@ -17,24 +17,24 @@ class Map:
         currentCell = 0
         for y in range(self.height):
             for x in range(self.width):
-                if(self.data[currentCell] != 0):
+                if(self.data[currentCell] == -1 or self.data[currentCell] == 0):
                     self.grid[x][y] = 0
                 # elif (self.data[currentCell] ):
                 #     self.grid[x][y] = 0
-                else:
+                elif(self.data[currentCell] == 100):
                     self.grid[x][y] = 1
                 currentCell+=1
         return self.grid
 
     def PrintMap(self):
         f=open("room.txt", "w")
-        print("GridMap")
+        # print("GridMap")
         f.write("Grid Map")
         for y in range(self.height):
             for x in range(self.width):
-                print(str(self.grid[x][y]), end=' ')
+                # print(str(self.grid[x][y]), end=' ')
                 f.write("%s " % str(self.grid[x][y]))
-            print()
+            # print()
             f.write("\n")
         f.close()
         
@@ -68,7 +68,6 @@ if __name__ == '__main__':
     rospy.wait_for_service('static_map')
     try:
         mapsrv = rospy.ServiceProxy('static_map', GetMap)
-        grid_msg = OccupancyGrid()
         result = mapsrv()
         loaded_map = Map(result.map.info.resolution, result.map.info.height, result.map.info.width, result.map.data)
         loaded_map.ReadMap()
