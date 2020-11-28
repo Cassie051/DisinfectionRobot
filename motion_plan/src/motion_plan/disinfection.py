@@ -13,11 +13,16 @@ class Disinfection:
         rospy.wait_for_service('static_map')
         mapsrv = rospy.ServiceProxy('static_map', GetMap)
         result = mapsrv()
-        self.dis_robot = Robot()
-        rospy.init_node('robot_position', anonymous=True)
         self.loaded_map = Map(result.map.info.resolution, result.map.info.height, result.map.info.width, result.map.info.origin, result.map.data)
         self.loaded_map.ReadMap()
         self.dis_map = deepcopy(self.loaded_map)
+        rospy.init_node('robot_position', anonymous=True)
+        self.dis_robot = Robot()
+
+    def __del__(self):
+        del self.dis_map
+        del self.dis_robot
+        del self.loaded_map
 
     def UpdateRobotPosition(self):
         xcord = (self.dis_robot.position.x - self.loaded_map.origin.position.x)/self.loaded_map.resolution

@@ -14,6 +14,14 @@ class Map:
         self.data = np.array(data, dtype=np.int8)
         self.grid = [[-1 for i in range(0, self.height)] for j in range(0, self.width)]
 
+    def __del__(self):
+        del self.resolution
+        del self.height
+        del self.width
+        del self.origin
+        del self.data
+        del self.grid
+
     def ReadMap(self):
         currentCell = 0
         for y in range(self.height):
@@ -30,7 +38,7 @@ class Map:
     def PrintMap(self):
         f=open("room.txt", "w")
         # print("GridMap")
-        f.write("Grid Map")
+        f.write("Grid Map\n")
         for y in range(self.height):
             for x in range(self.width):
                 # print(str(self.grid[x][y]), end=' ')
