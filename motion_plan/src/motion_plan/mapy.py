@@ -6,10 +6,11 @@ from nav_msgs.msg import OccupancyGrid, MapMetaData, Odometry
 from nav_msgs.srv import GetMap
 
 class Map:
-    def __init__(self, resolution, height, width, data):
+    def __init__(self, resolution, height, width, origin, data):
         self.resolution = np.float32(resolution)
         self.height = np.uint32(height)
         self.width = np.uint32(width)
+        self.origin = origin
         self.data = np.array(data, dtype=np.int8)
         self.grid = [[-1 for i in range(0, self.height)] for j in range(0, self.width)]
 
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     try:
         mapsrv = rospy.ServiceProxy('static_map', GetMap)
         result = mapsrv()
-        loaded_map = Map(result.map.info.resolution, result.map.info.height, result.map.info.width, result.map.data)
+        loaded_map = Map(result.map.info.resolution, result.map.info.height, result.map.info.width, result.origin, result.map.data)
         loaded_map.ReadMap()
         loaded_map.PrintMap()
     except rospy.ServiceException as e:
