@@ -1,9 +1,9 @@
-from distutils.core import setup
+from setuptools import setup
 from catkin_pkg.python_setup import generate_distutils_setup
 
-setup_args = generate_disutils_setup(
-    packages=['common_tools_pkg'],
-    package_dir=['':'src'],
-)
+# fetch values from package.xml
+setup_args = generate_distutils_setup(
+    packages=['your_package'],
+    package_dir={'': 'src'})
 
 setup(**setup_args)
