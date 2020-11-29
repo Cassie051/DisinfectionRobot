@@ -6,16 +6,18 @@ from nav_msgs.msg import Odometry
 
 class Robot:
     def __init__(self):
-        self.position = 0
         self.orientation = 0
-        self.goalPointsonMap = [[754, 30], [804, 20], [808,40], [813, 80], [804, 119], [760, 86], [735, 80], [710, 87], [690, 82], [640,80], [636, 86], [473, 103]]
         self.linear_vel_x = 0
         self.angular_z = 0
+        self.onMapPosition = [0, 0]
         rospy.Subscriber('/odom', Odometry, self.UpdatePosition)
+        self.goalPointsonMap = [[754, 30], [804, 20], [808,40], [813, 80], [804, 119], [760, 86], [735, 80], [710, 87], [690, 82], [640,80], [636, 86], [473, 103]]
 
     def __del__(self):
-        del self.position
         del self.orientation
+        del self.linear_vel_x
+        del self.angular_z
+        del self.onMapPosition
 
     def PrinPosition(self):
         print("Position XYZ: %f, %f, %f" %(self.position.x, self.position.y, self.position.y), end ="  ")

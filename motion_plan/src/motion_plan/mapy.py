@@ -13,6 +13,7 @@ class Map:
         self.origin = origin
         self.data = np.array(data, dtype=np.int8)
         self.grid = [[-1 for i in range(0, self.height)] for j in range(0, self.width)]
+        self.walls = []
 
     def __del__(self):
         del self.resolution
@@ -21,6 +22,7 @@ class Map:
         del self.origin
         del self.data
         del self.grid
+        del self.walls
 
     def ReadMap(self):
         currentCell = 0
@@ -42,35 +44,22 @@ class Map:
         for y in range(self.height):
             for x in range(self.width):
                 # print(str(self.grid[x][y]), end=' ')
-                f.write("%s " % str(self.grid[x][y]))
+                if(self.grid[x][y] != "R"):
+                    tmp = float(self.grid[x][y])
+                    gridFloat = round(tmp, 1)
+                    f.write("%s " % str(gridFloat))
+                else:
+                    f.write("%s " % str(self.grid[x][y]))
             # print()
             f.write("\n")
         f.close()
         
-    def OutPoints(self):
-        isWallx, isWally = 0, 0
-        x, y = 0, 0
-        outPoints = []
-        wallX, wallY = [], []
-        for y in range(self.width):
-            if(self.grid[x][y]):
-                isWally+=1
-                wallY.append(y)
-            else:
-                isWally = 0
-            if(isWally>=3 and not self.grid[x][y+1]):
-                    XoutPoint = y
-                    isWally = 0
-            for x in range(self.height):
-                if(self.grid[x][y]):
-                    isWallx +=1
-                    wallX.append(x)
-                else:
-                    isWallx = 0
-                if((isWallx>=3 and not self.grid[x+1][y])):
-                    min(wallX)
-                    isWallx = 0
-                if(isWally == 1 and isWally == 1): outPoints.append([x, y])
+    def FindWalls(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                if(self.grid[x][y] == 1):
+                    self.walls.append([x, y])
+
             
 if __name__ == '__main__':
     # rospy.init_node('map_try', anonymous=True)
@@ -78,9 +67,10 @@ if __name__ == '__main__':
     try:
         mapsrv = rospy.ServiceProxy('static_map', GetMap)
         result = mapsrv()
-        loaded_map = Map(result.map.info.resolution, result.map.info.height, result.map.info.width, result.origin, result.map.data)
+        loaded_map = Map(result.map.info.resolution, result.map.info.height, result.map.info.width, result.map.info.origin, result.map.data)
         loaded_map.ReadMap()
         loaded_map.PrintMap()
+        loaded_map.FindWalls()
     except rospy.ServiceException as e:
         print("Service call failed: %s"%e)
 
