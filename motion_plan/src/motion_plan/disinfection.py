@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 
 import rospy
-from mapy import Map
-from robot import Robot
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Odometry
 from nav_msgs.srv import GetMap
 from geometry_msgs.msg import Pose
+from mapy import Map
+from robot import Robot
 from copy import deepcopy
 
 class Disinfection:

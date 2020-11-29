@@ -2,10 +2,13 @@
 
 import rospy
 import math
+import sys
+import numpy as np
 from geometry_msgs.msg import Twist
 from nav_msgs.srv import GetMap
 from robot import Robot
 from mapy import Map
+from copy import deepcopy
 
 
 class PurePursuit:
@@ -30,23 +33,66 @@ class PurePursuit:
         self.robotCordY = int((self.robot.position.y - self.loaded_map.origin.position.y)/self.loaded_map.resolution)
 
     def FindCurrentWaypoint(self):
-        ACCURACY = 0
-        for goal in self.robot.goalPointsonMap:
-            xDistance = (self.robotCordX - goal[0])*self.loaded_map.resolution
-            yDistance = (self.robotCordY- goal[1])*self.loaded_map.resolution
-            if(self.L2 - xDistance*xDistance - yDistance*yDistance < ACCURACY):
-                self.CalculateR(goal)
-                while(not (self.robotCordX == goal[0] and self.robotCordY == goal[1])):
-                    self.RobotMove()
-                    self.CountCord()
-                ACCURACY = 0
-                self.robot.goalPointsonMap.pop(self.robot.goalPointsonMap.index(goal))
-            else:
-                ACCURACY+=1
+        ACCURACY = 1
+        index = len(self.robot.goalPointsonMap)-1
+        while(len(self.robot.goalPointsonMap) != 0):
+            xDistance = (self.robotCordX - self.robot.goalPointsonMap[index][0])*self.loaded_map.resolution
+            yDistance = (self.robotCordY - self.robot.goalPointsonMap[index][1])*self.loaded_map.resolution
+            if(abs(self.L2 - xDistance*xDistance - yDistance*yDistance) <= ACCURACY):
+                self.CalculateR(index)
+                # while(not (self.robotCordX == goal[0] and self.robotCordY == goal[1])):
+                self.RobotMove()
+                self.CountCord()
+                self.robot.goalPointsonMap.pop(index)
+            index -= 1
+            if(index < 0):
+                self.AddNewPoint()
+                index = len(self.robot.goalPointsonMap)-1
 
-    def CalculateR(self, goal):
+    def AddNewPoint(self):
+        minGoal = self.FindNearestPoints()
+        goal = self.CalculateNewPoint(minGoal)
+        self.robot.goalPointsonMap.append([int(goal[0]), int(goal[1])])
+
+    def FindNearestPoints(self):
+        MIN1, MIN2 = int(sys.maxsize), int(sys.maxsize)
+        wayPoints = deepcopy(self.robot.goalPointsonMap)
+        minGoals =[]
+        index = len(self.robot.goalPointsonMap)-1
+        while(index >= 0):
+            xDistance = (self.robotCordX - wayPoints[index][0])*self.loaded_map.resolution
+            yDistance = (self.robotCordY - wayPoints[index][1])*self.loaded_map.resolution
+            if(abs(self.L2 - xDistance*xDistance - yDistance*yDistance) < MIN1):
+                MIN1 = abs(self.L2 - xDistance*xDistance - yDistance*yDistance)
+                minindex = index
+            index -= 1
+        minGoals.append(wayPoints[minindex])
+        wayPoints.pop(minindex)
+        index = len(wayPoints)-1
+        while(index >= 0):
+            xDistance = (self.robotCordX - wayPoints[index][0])*self.loaded_map.resolution
+            yDistance = (self.robotCordY - wayPoints[index][1])*self.loaded_map.resolution
+            if(abs(self.L2 - xDistance*xDistance - yDistance*yDistance) < MIN2):
+                MIN2 = abs(self.L2 - xDistance*xDistance - yDistance*yDistance)
+                minindex = index
+            index -= 1
+        minGoals.append(wayPoints[minindex])
+        return minGoals
+        
+    def CalculateNewPoint(self, foundGoal):
+        goal =[]
+        cal = (foundGoal[0][1]-foundGoal[1][1])/(foundGoal[0][0]-foundGoal[1][0])
+        # steps = abs(foundGoal[1][0] - foundGoal[0][0]) * 10
+        accuracy = 0.001
+        for x in np.arange(foundGoal[0][0], foundGoal[1][0], accuracy):
+           if(round(self.L2-x**2, 2) == round(cal**2*(x**2-foundGoal[0][0]**2)+foundGoal[0][1]**2-2*cal*foundGoal[0][0], 2)):
+                goal.append(x)
+                goal.append(math.sqrt(self.L2-x**2))
+        return goal
+
+    def CalculateR(self, index):
         # xDistance = abs(self.robot.position.x - goal[0])
-        yDistance = abs(self.robot.position.y - goal[1])*self.loaded_map.resolution
+        yDistance = abs(self.robot.position.y - self.robot.goalPointsonMap[index][1])*self.loaded_map.resolution
         self.r = self.L2/(2*yDistance)
         
     def RobotMove(self):
