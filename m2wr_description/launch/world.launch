@@ -1,0 +1,35 @@
+<launch>
+
+  <!--Robot Description from URDF-->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find m2wr_description)/urdf/m2wr.xacro'"/>
+
+  <!-- send fake joint values -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+
+  <!-- Combine joint values -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <!-- gmapping -->
+  <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping">
+    <param name="base_frame" value="link_chassis"/>
+  </node>  
+
+  <!--Map Server-->
+  <arg name="map_file" default="$(find motion_plan)/maps/map.yaml"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+  
+  <!--RViz-->
+  <node name="rviz" pkg="rviz" type="rviz" required="true"/>
+
+  <!--Gazebo empty world launch file-->
+  <param name="/use_sim_time" value="true" />
+  <node name="gazebo" pkg="gazebo_ros" type="gazebo" args="$(find m2wr_description)/worlds/dis_world.world" respawn="false" output="screen"/>
+
+  <!--Gazebo Simulator-->
+  <arg name="x" default="0"/>
+  <arg name="y" default="0"/>
+  <arg name="z" default="0.5"/>
+
+  <node name="mybot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-urdf -param robot_description -model m2wr -x $(arg x) -y $(arg y) -z $(arg z)" />
+</launch>

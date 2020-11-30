@@ -242,29 +242,45 @@
     
     <include>
       <uri>model://hokuyo</uri>
-      <pose>0.2 0 0.2 0 0 0</pose>
+      <pose>0.4 0 0.2 0 0 0</pose>
     </include>
     <joint name="hokuyo_joint" type="fixed">
       <child>hokuyo::link</child>
       <parent>chassis</parent>
     </joint>
     
-    <joint type="revolute" name="left_wheel_hinge">
+    <joint type="continuous" name="left_wheel_hinge">
         <pose>0 0 -0.03 0 0 0</pose>
         <child>left_wheel</child>
         <parent>chassis</parent>
         <axis>
             <xyz>0 1 0</xyz>
         </axis>
+                <limit>
+         <effort>10000</effort>
+         <velocity>1000</velocity>
+        </limit>
+        <joint_properties> 
+        <damping>1.0</damping> 
+        <friction>1.0</friction>
+        </joint_properties>
     </joint>
 
-    <joint type="revolute" name="right_wheel_hinge">
+    <joint type="continuous" name="right_wheel_hinge">
         <pose>0 0 0.03 0 0 0</pose>
         <child>right_wheel</child>
         <parent>chassis</parent>
         <axis>
             <xyz>0 1 0</xyz>
         </axis>
+        <limit>
+         <effort>10000</effort>
+         <velocity>1000</velocity>
+        </limit>
+        <joint_properties> 
+        <damping>1.0</damping> 
+        <friction>1.0</friction>
+        </joint_properties>
     </joint>    
 <!--     
     <plugin
@@ -289,7 +305,7 @@
         <commandTopic>cmd_vel</commandTopic>
         <odometryTopic>odom</odometryTopic>
         <odometryFrame>odom</odometryFrame>
-        <robotBaseFrame>base_footprint</robotBaseFrame>
+        <robotBaseFrame>chassis</robotBaseFrame>
         <odometrySource>1</odometrySource>
         <publishWheelTF>true</publishWheelTF>
         <publishOdom>true</publishOdom>
