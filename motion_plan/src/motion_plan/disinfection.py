@@ -121,9 +121,9 @@ class Disinfection:
                 x = abs(self.dis_robot.onMapPosition[0] - wallCord[0])*self.dis_map.resolution
                 y = abs(self.dis_robot.onMapPosition[1] - wallCord[1])*self.dis_map.resolution
                 r = math.sqrt(x**2 + y**2)
-                dose = E*time/r*x/r
+                dose = E*time/r # *x/r
                 self.dis_map.grid[wallCord[0]][wallCord[1]] = dose
-        self.loaded_map.PrintMap()
+        self.dis_map.PrintMap()
 
 
 
