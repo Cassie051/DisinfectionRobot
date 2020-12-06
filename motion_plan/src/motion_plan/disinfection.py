@@ -8,18 +8,20 @@ from mapy import Map
 from robot import Robot
 from copy import deepcopy
 import math
+import time
+import threading
 
 class Disinfection:
-    def __init__(self):
-        rospy.wait_for_service('static_map')
-        mapsrv = rospy.ServiceProxy('static_map', GetMap)
-        result = mapsrv()
-        self.loaded_map = Map(result.map.info.resolution, result.map.info.height, result.map.info.width, result.map.info.origin, result.map.data)
+    def __init__(self, mapresult):
+        self.loaded_map = Map(mapresult.map.info.resolution, mapresult.map.info.height, mapresult.map.info.width, mapresult.map.info.origin, mapresult.map.data)
+        self.dis_map = deepcopy(self.loaded_map)
+        # rospy.init_node('disinfection_map', anonymous=True)
         self.loaded_map.ReadMap()
         self.loaded_map.FindWalls()
-        self.dis_map = deepcopy(self.loaded_map)
         self.dis_robot = Robot()
-        rospy.init_node('robot_position', anonymous=True)
+        self.dis_start_time = time.time()
+        rospy.init_node('disinfection', anonymous=True)
+        self.map_pub = rospy.Publisher('/dis_map', OccupancyGrid)
 
     def __del__(self):
         del self.dis_map
@@ -29,106 +31,67 @@ class Disinfection:
     def UpdateRobotPosition(self):
         xcord = (self.dis_robot.position.x - self.loaded_map.origin.position.x)/self.loaded_map.resolution
         ycord = (self.dis_robot.position.y - self.loaded_map.origin.position.y)/self.loaded_map.resolution
-        self.dis_map.grid[int(xcord)][int(ycord)] = "R"
-        self.dis_robot.onMapPosition.append([int(xcord), int(ycord)])
+        # self.dis_map.grid[int(xcord)][int(ycord)] = "R"
+        self.dis_robot.onMapPosition[0] = int(xcord)
+        self.dis_robot.onMapPosition[1] = int(ycord)
     
-    def Process(self):
+    def AlgorithmBres(self, wallCord):
+        line = []
+        x0, y0 = self.dis_robot.onMapPosition[0], self.dis_robot.onMapPosition[1]
+        x1, y1 = wallCord[0], wallCord[1]
+        dx = abs(wallCord[0] - self.dis_robot.onMapPosition[0])
+        sx = 1 if self.dis_robot.onMapPosition[0] < wallCord[0] else -1
+        dy = -1*abs(wallCord[1] - self.dis_robot.onMapPosition[1])
+        sy = 1 if self.dis_robot.onMapPosition[1] < wallCord[1] else -1
+        err = dx+dy
+        while(True):
+            line.append([x0, y0])
+            if(x0 == x1 and y0 == y1):
+                break
+            e2 = 2*err
+            if(e2 >= dy):
+                err += dy
+                x0 += sx
+            if(e2 <= dx):
+                err += dx
+                y0 += sy
+        return line
+    
+    def CalculateDis(self):
+        # E = 15373.44
+        E = 30746.88
         self.UpdateRobotPosition()
-        E = 4.88
-        time = 1
+        self.dis_map.SaveMap()
+        self.dis_map.PublishMap(self.map_pub)
         for wallCord in self.loaded_map.walls:
-            obstacle = False
-            A = self.dis_robot.onMapPosition[0] - wallCord[0]     # line parametrs Ay + Bx + C = 0
-            B = wallCord[1] - self.dis_robot.onMapPosition[1]
-            C = (self.dis_robot.onMapPosition[1] - wallCord[1])*self.dis_robot.onMapPosition[0] + (wallCord[0] - self.dis_robot.onMapPosition[0])*self.dis_robot.onMapPosition[1]
-            iterPoint = [0, 0]
-            if(B != 0):
-                if(wallCord[0] < self.dis_robot.onMapPosition[0]):
-                    iterPoint[0] = wallCord[0]+1
-                    while(iterPoint[0] < self.dis_robot.onMapPosition[0]):
-                        iterPoint[1] = int((B*iterPoint[0]+C)/A)
-                        if(self.loaded_map.grid[iterPoint[0]][iterPoint[1]] != 0):
-                            obstacle = True
-                            break
-                        else:
-                            iterPoint[0] += 1
-                            
-                if(wallCord[0] > self.dis_robot.onMapPosition[0]):
-                    iterPoint[0] = wallCord[0] -1
-                    while(iterPoint[0] > self.dis_robot.onMapPosition[0]):
-                        iterPoint[1] = int((B*iterPoint[0]+C)/A)
-                        if(self.loaded_map.grid[iterPoint[0]][iterPoint[1]] != 0):
-                            obstacle = True
-                            break
-                        else:
-                            iterPoint[0] -= 1
-            else:
-                iterPoint[0] = wallCord[0]
-                if(wallCord[1] < self.dis_robot.onMapPosition[1]):
-                    iterPoint[1] = wallCord[1]
-                    while(iterPoint[1] < self.dis_robot.onMapPosition[1]):
-                        if(self.loaded_map.grid[iterPoint[0]][iterPoint[1]] == 1):
-                            obstacle = True
-                            break
-                        else:
-                            iterPoint[1] += 1
-                if(wallCord[1] > self.dis_robot.onMapPosition[1]):
-                    iterPoint[1] = wallCord[1]
-                    while(iterPoint[1] > self.dis_robot.onMapPosition[1]):
-                        if(self.loaded_map.grid[iterPoint[0]][iterPoint[1]] == 1):
-                            obstacle = True
-                            break
-                        else:
-                            iterPoint[1] -= 1
-            if(A != 0):
-                if(wallCord[1] < self.dis_robot.onMapPosition[1]):
-                    iterPoint[1] = wallCord[1] + 1
-                    while(iterPoint[1] < self.dis_robot.onMapPosition[1]):
-                        iterPoint[0] = int((A*iterPoint[1]+C)/-B)
-                        if(self.loaded_map.grid[iterPoint[0]][iterPoint[1]] != 0):
-                            obstacle = True
-                            break
-                        else:
-                            iterPoint[1] += 1
-                if(wallCord[1] > self.dis_robot.onMapPosition[1]):
-                    iterPoint[1] = wallCord[1] - 1
-                    while(iterPoint[1] > self.dis_robot.onMapPosition[1]):
-                        iterPoint[0] = int((A*iterPoint[1]+C)/-B)
-                        if(self.loaded_map.grid[iterPoint[0]][iterPoint[1]] != 0):
-                            obstacle = True
-                            break
-                        else:
-                            iterPoint[1] -= 1
-            else:
-                iterPoint[1] = wallCord[1]
-                if(wallCord[0] < self.dis_robot.onMapPosition[0]):
-                    iterPoint[0] = wallCord[0]
-                    while(iterPoint[0] < self.dis_robot.onMapPosition[0]):
-                        if(self.loaded_map.grid[iterPoint[0]][iterPoint[1]] == 1):
-                            obstacle = True
-                            break
-                        else:
-                            iterPoint[0] += 1
-                if(wallCord[0] > self.dis_robot.onMapPosition[0]):
-                    iterPoint[0] = wallCord[0]
-                    while(iterPoint[0] > self.dis_robot.onMapPosition[0]):
-                        if(self.loaded_map.grid[iterPoint[0]][iterPoint[1]] == 1):
-                            obstacle = True
-                            break
-                        else:
-                            iterPoint[0] -= 1
-            if(obstacle == False):
-                x = abs(self.dis_robot.onMapPosition[0] - wallCord[0])*self.dis_map.resolution
-                y = abs(self.dis_robot.onMapPosition[1] - wallCord[1])*self.dis_map.resolution
-                r = math.sqrt(x**2 + y**2)
-                dose = E*time/r*x/r
-                self.dis_map.grid[wallCord[0]][wallCord[1]] = dose
-        self.loaded_map.PrintMap()
+            x = (self.dis_robot.onMapPosition[0] - wallCord[0])*self.dis_map.resolution
+            y = (self.dis_robot.onMapPosition[1] - wallCord[1])*self.dis_map.resolution
+            r = math.sqrt(x**2 + y**2)*100
+            dis_pass_time = time.time() - self.dis_start_time
+            dose = E*dis_pass_time/r                            # SARS killing dose 10-20 COVID sure killing dose 1000 - 3000 mJ/cm2  | uses 30 mJ/cm2
+            line = self.AlgorithmBres(wallCord)                 # lamp 1.7W/cm lenght = 90 cm weight = 12.56 cm and 8 lamps-> 15373.44 W/cm2
+            for point in line:
+                mapPoint = self.loaded_map.grid[point[0]][point[1]]
+                if(mapPoint == 1):
+                    self.dis_map.grid[point[0]][point[1]] += dose
+                    break
 
-
+    def Process(self):
+        i = 0
+        while(True):
+            th = threading.Thread(target = self.CalculateDis)
+            th.start()
+            time.sleep(1)
+            i += 1
+            if(i == 20):
+                self.dis_map.PrintMap()
+                i = 0
 
 if __name__ == '__main__':
-    dis_process = Disinfection()
+    rospy.wait_for_service('static_map')
+    mapsrv = rospy.ServiceProxy('static_map', GetMap)
+    result = mapsrv()
+    dis_process = Disinfection(result)
     dis_process.Process()
     try:
         rospy.spin()

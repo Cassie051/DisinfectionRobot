@@ -2,6 +2,7 @@
 
 import rospy
 import numpy as np
+import sys
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Odometry
 from nav_msgs.srv import GetMap
 
@@ -12,8 +13,9 @@ class Map:
         self.width = np.uint32(width)
         self.origin = origin
         self.data = np.array(data, dtype=np.int8)
-        self.grid = [[-1 for i in range(0, self.height)] for j in range(0, self.width)]
+        self.grid = [[0 for i in range(0, self.height)] for j in range(0, self.width)]
         self.walls = []
+
 
     def __del__(self):
         del self.resolution
@@ -25,6 +27,7 @@ class Map:
         del self.walls
 
     def ReadMap(self):
+        self.grid = [[-1 for i in range(0, self.height)] for j in range(0, self.width)]
         currentCell = 0
         for y in range(self.height):
             for x in range(self.width):
@@ -39,18 +42,15 @@ class Map:
 
     def PrintMap(self):
         f=open("room.txt", "w")
-        # print("GridMap")
         f.write("Grid Map\n")
         for y in range(self.height):
             for x in range(self.width):
-                # print(str(self.grid[x][y]), end=' ')
                 if(self.grid[x][y] != "R"):
                     tmp = float(self.grid[x][y])
                     gridFloat = round(tmp, 1)
                     f.write("%s " % str(gridFloat))
                 else:
                     f.write("%s " % str(self.grid[x][y]))
-            # print()
             f.write("\n")
         f.close()
         
@@ -59,7 +59,51 @@ class Map:
             for x in range(self.width):
                 if(self.grid[x][y] == 1):
                     self.walls.append([x, y])
+    
+    def max_value(self):
+        max_val = -1
+        for y in range(self.height):
+                for x in range(self.width):
+                    if(self.grid[x][y] > max_val and self.grid[x][y] != 0):
+                        max_val = self.grid[x][y]
+        return max_val
 
+    def min_value(self):
+        min_val = sys.maxsize
+        for y in range(self.height):
+                for x in range(self.width):
+                    if(self.grid[x][y] < min_val and self.grid[x][y] != 0):
+                        min_val = self.grid[x][y]
+        return min_val
+
+    def SaveMap(self):
+        # max_grid = self.max_value()
+        # min_grid = self.min_value()
+        max_grid = 30000000
+        min_grid = 2
+        data_range = 100/(max_grid - min_grid)
+        # if (max_grid-min_grid == 0):
+        #     data_range = 0 
+        # else:
+        #     data_range = 99/(max_grid - min_grid)
+        currentCell = 0
+        while(currentCell < self.width * self.height):
+            for y in range(self.height):
+                for x in range(self.width):
+                    if(self.grid[x][y] == 0):
+                        self.data[currentCell] = 0
+                    else:
+                        self.data[currentCell] = int(self.grid[x][y]*data_range)
+                    currentCell+=1
+
+    def PublishMap(self, map_pub):
+        make_map = OccupancyGrid()
+        make_map.info.resolution = self.resolution
+        make_map.info.width = self.width
+        make_map.info.height = self.height
+        make_map.info.origin = self.origin
+        make_map.data = self.data
+        map_pub.publish(make_map)
             
 if __name__ == '__main__':
     # rospy.init_node('map_try', anonymous=True)
