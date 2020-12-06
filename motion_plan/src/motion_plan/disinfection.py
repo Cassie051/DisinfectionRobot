@@ -58,17 +58,18 @@ class Disinfection:
         return line
     
     def CalculateDis(self):
-        E = 4.88
+        # E = 15373.44
+        E = 30746.88
         self.UpdateRobotPosition()
         self.dis_map.SaveMap()
         self.dis_map.PublishMap(self.map_pub)
         for wallCord in self.loaded_map.walls:
             x = (self.dis_robot.onMapPosition[0] - wallCord[0])*self.dis_map.resolution
             y = (self.dis_robot.onMapPosition[1] - wallCord[1])*self.dis_map.resolution
-            r = math.sqrt(x**2 + y**2)
+            r = math.sqrt(x**2 + y**2)*100
             dis_pass_time = time.time() - self.dis_start_time
-            dose = E*dis_pass_time/r # *x/r
-            line = self.AlgorithmBres(wallCord)
+            dose = E*dis_pass_time/r                            # SARS killing dose 10-20 COVID sure killing dose 1000 - 3000 mJ/cm2  | uses 30 mJ/cm2
+            line = self.AlgorithmBres(wallCord)                 # lamp 1.7W/cm lenght = 90 cm weight = 12.56 cm and 8 lamps-> 15373.44 W/cm2
             for point in line:
                 mapPoint = self.loaded_map.grid[point[0]][point[1]]
                 if(mapPoint == 1):
