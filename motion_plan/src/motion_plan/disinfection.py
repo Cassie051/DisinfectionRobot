@@ -8,15 +8,20 @@ from mapy import Map
 from robot import Robot
 from copy import deepcopy
 import math
+import time
+import threading
 
 class Disinfection:
     def __init__(self, mapresult):
         self.loaded_map = Map(mapresult.map.info.resolution, mapresult.map.info.height, mapresult.map.info.width, mapresult.map.info.origin, mapresult.map.data)
         self.dis_map = deepcopy(self.loaded_map)
+        # rospy.init_node('disinfection_map', anonymous=True)
         self.loaded_map.ReadMap()
         self.loaded_map.FindWalls()
         self.dis_robot = Robot()
-        rospy.init_node('robot_position', anonymous=True)
+        self.dis_start_time = time.time()
+        rospy.init_node('disinfection', anonymous=True)
+        self.map_pub = rospy.Publisher('/dis_map', OccupancyGrid)
 
     def __del__(self):
         del self.dis_map
@@ -26,7 +31,7 @@ class Disinfection:
     def UpdateRobotPosition(self):
         xcord = (self.dis_robot.position.x - self.loaded_map.origin.position.x)/self.loaded_map.resolution
         ycord = (self.dis_robot.position.y - self.loaded_map.origin.position.y)/self.loaded_map.resolution
-        self.dis_map.grid[int(xcord)][int(ycord)] = "R"
+        # self.dis_map.grid[int(xcord)][int(ycord)] = "R"
         self.dis_robot.onMapPosition[0] = int(xcord)
         self.dis_robot.onMapPosition[1] = int(ycord)
     
@@ -51,23 +56,35 @@ class Disinfection:
                 err += dx
                 y0 += sy
         return line
-
-    def Process(self):
-        self.UpdateRobotPosition()
+    
+    def CalculateDis(self):
         E = 4.88
-        time = 1
+        self.UpdateRobotPosition()
+        self.dis_map.SaveMap()
+        self.dis_map.PublishMap(self.map_pub)
         for wallCord in self.loaded_map.walls:
-            x = abs(self.dis_robot.onMapPosition[0] - wallCord[0])*self.dis_map.resolution
-            y = abs(self.dis_robot.onMapPosition[1] - wallCord[1])*self.dis_map.resolution
+            x = (self.dis_robot.onMapPosition[0] - wallCord[0])*self.dis_map.resolution
+            y = (self.dis_robot.onMapPosition[1] - wallCord[1])*self.dis_map.resolution
             r = math.sqrt(x**2 + y**2)
-            dose = E*time/r # *x/r
+            dis_pass_time = time.time() - self.dis_start_time
+            dose = E*dis_pass_time/r # *x/r
             line = self.AlgorithmBres(wallCord)
             for point in line:
                 mapPoint = self.loaded_map.grid[point[0]][point[1]]
                 if(mapPoint == 1):
                     self.dis_map.grid[point[0]][point[1]] += dose
                     break
-        self.dis_map.PrintMap()
+
+    def Process(self):
+        i = 0
+        while(True):
+            th = threading.Thread(target = self.CalculateDis)
+            th.start()
+            time.sleep(1)
+            i += 1
+            if(i == 20):
+                self.dis_map.PrintMap()
+                i = 0
 
 if __name__ == '__main__':
     rospy.wait_for_service('static_map')
