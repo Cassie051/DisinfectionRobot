@@ -12,7 +12,7 @@ class Map:
         self.width = np.uint32(width)
         self.origin = origin
         self.data = np.array(data, dtype=np.int8)
-        self.grid = [[-1 for i in range(0, self.height)] for j in range(0, self.width)]
+        self.grid = [[0 for i in range(0, self.height)] for j in range(0, self.width)]
         self.walls = []
 
     def __del__(self):
@@ -25,6 +25,7 @@ class Map:
         del self.walls
 
     def ReadMap(self):
+        self.grid = [[-1 for i in range(0, self.height)] for j in range(0, self.width)]
         currentCell = 0
         for y in range(self.height):
             for x in range(self.width):
