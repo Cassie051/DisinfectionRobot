@@ -14,7 +14,7 @@ $ catkin_make
 To make sure your workspace is properly overlayed by the setup script.
 $ source <catkin_ws>/devel/setup.sh
 Launching Gazebo
-$ roslaunch disinfection_robot world.launch
+$ roslaunch robot_description world.launch
 
 Move robot
 $ rosrun teleop_twist_keyboard teleop_twist_keyboard.py key_vel=cmd_vel

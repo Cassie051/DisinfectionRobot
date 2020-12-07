@@ -1,7 +1,7 @@
 <launch>
 
   <!--Robot Description from URDF-->
-  <param name="robot_description" command="$(find xacro)/xacro '$(find m2wr_description)/urdf/m2wr.xacro'"/>
+  <param name="robot_description" command="$(find xacro)/xacro '$(find robot_description)/urdf/m2wr.xacro'"/>
 
   <!-- send fake joint values -->
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
@@ -23,7 +23,7 @@
 
   <!--Gazebo empty world launch file-->
   <param name="/use_sim_time" value="true" />
-  <node name="gazebo" pkg="gazebo_ros" type="gazebo" args="$(find m2wr_description)/worlds/dis_world.world" respawn="false" output="screen"/>
+  <node name="gazebo" pkg="gazebo_ros" type="gazebo" args="$(find robot_description)/worlds/dis_world.world" respawn="false" output="screen"/>
 
   <!--Gazebo Simulator-->
   <arg name="x" default="0"/>
