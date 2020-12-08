@@ -77,15 +77,9 @@ class Map:
         return min_val
 
     def SaveMap(self):
-        # max_grid = self.max_value()
-        # min_grid = self.min_value()
         max_grid = 30000000
         min_grid = 2
-        data_range = 100/(max_grid - min_grid)
-        # if (max_grid-min_grid == 0):
-        #     data_range = 0 
-        # else:
-        #     data_range = 99/(max_grid - min_grid)
+        data_range = 99/(max_grid + 3 - min_grid)
         currentCell = 0
         while(currentCell < self.width * self.height):
             for y in range(self.height):
@@ -93,7 +87,10 @@ class Map:
                     if(self.grid[x][y] == 0):
                         self.data[currentCell] = 0
                     else:
-                        self.data[currentCell] = int(self.grid[x][y]*data_range)
+                        if(int(self.grid[x][y]) >= max_grid):
+                            self.data[currentCell] = max_grid
+                        else:
+                            self.data[currentCell] = int(self.grid[x][y]*data_range)
                     currentCell+=1
 
     def PublishMap(self, map_pub):
