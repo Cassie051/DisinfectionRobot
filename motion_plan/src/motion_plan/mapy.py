@@ -93,7 +93,10 @@ class Map:
                     if(self.grid[x][y] == 0):
                         self.data[currentCell] = 0
                     else:
-                        self.data[currentCell] = int(self.grid[x][y]*data_range)
+                        if(self.grid[x][y] >= max_grid):
+                            self.data[currentCell] = max_grid
+                        else:
+                            self.data[currentCell] = int(self.grid[x][y]*data_range)
                     currentCell+=1
 
     def PublishMap(self, map_pub):

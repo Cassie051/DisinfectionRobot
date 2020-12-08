@@ -44,8 +44,31 @@ class Disinfection:
         dy = -1*abs(wallCord[1] - self.dis_robot.onMapPosition[1])
         sy = 1 if self.dis_robot.onMapPosition[1] < wallCord[1] else -1
         err = dx+dy
+        line.append([x0, y0])
+        # 4
+        if(sx == 1 and sy == -1 and err > 0):
+            x1, y1 = wallCord[0]-1, wallCord[1]+1
+        elif(sx == 1 and sy == -1 and err < 0):
+            x1, y1 = wallCord[0]-1, wallCord[1]+1
+        # 1
+        elif(sx == 1 and sy == 1 and err > 0):
+            x1, y1 = wallCord[0]-1, wallCord[1]-1
+        elif(sy == 1 and sx ==1 and err < 0):
+            x1, y1 = wallCord[0]-1, wallCord[1]-1
+        # 2
+        elif(sy == 1 and sx ==-1 and err < 0):
+            x1, y1 = wallCord[0]+1, wallCord[1]-1
+        elif(sx == -1 and sy == 1 and err > 0):
+            x1, y1 = wallCord[0]+1, wallCord[1]-1
+        # 3
+        elif(sx == -1 and sy == -1 and err > 0):
+            x1, y1 = wallCord[0]+1, wallCord[1]+1
+        elif(sx == -1 and sy == -1 and err < 0):
+            x1, y1 = wallCord[0]+1, wallCord[1]+1
+        dx = abs(x1 - self.dis_robot.onMapPosition[0])
+        dy = -1*abs(y1 - self.dis_robot.onMapPosition[1])
+        err = dx+dy
         while(True):
-            line.append([x0, y0])
             if(x0 == x1 and y0 == y1):
                 break
             e2 = 2*err
@@ -55,11 +78,35 @@ class Disinfection:
             if(e2 <= dx):
                 err += dx
                 y0 += sy
+            line.append([x0, y0])
+        dx = abs(wallCord[0] - self.dis_robot.onMapPosition[0])
+        dy = -1*abs(wallCord[1] - self.dis_robot.onMapPosition[1])
+        err = dx+dy
+        if(sx == 1 and sy == -1 and err > 0):
+            x0, y0 = x0+1, y0-1
+        elif(sx == 1 and sy == -1 and err < 0):
+            x0, y0 = x0+1, y0-1
+        # 1
+        elif(sx == 1 and sy == 1 and err > 0):
+            x0, y0 = x0+1, y0+1
+        elif(sy == 1 and sx ==1 and err < 0):
+            x0, y0 = x0+1, y0+1
+        # 2
+        elif(sy == 1 and sx ==-1 and err < 0):
+            x0, y0 = x0-1, y0+1
+        elif(sx == -1 and sy == 1 and err > 0):
+            x0, y0 = x0-1, y0+1
+        # 3
+        elif(sx == -1 and sy == -1 and err > 0):
+            x0, y0 = x0-1, y0-1
+        elif(sx == -1 and sy == -1 and err < 0):
+            x0, y0 = x0-1, y0-1
+        line.append([x0, y0])
         return line
     
     def CalculateDis(self):
         # E = 15373.44
-        E = 30746.88
+        E = 30746.88 *100
         self.UpdateRobotPosition()
         self.dis_map.SaveMap()
         self.dis_map.PublishMap(self.map_pub)
@@ -67,8 +114,7 @@ class Disinfection:
             obstycle = False
             line = self.AlgorithmBres(wallCord)           
             for i in range(0, len(line)-2):
-                mapPoint = self.loaded_map.grid[line[i][0]][line[i][1]]
-                if(mapPoint == 1):
+                if(self.loaded_map.grid[line[i][0]][line[i][1]] == 1):
                     obstycle = True
                     break
             if(obstycle == False):
@@ -77,14 +123,14 @@ class Disinfection:
                 r = math.sqrt(x**2 + y**2)*100
                 dis_pass_time = time.time() - self.dis_start_time   # SARS killing dose 10-20 COVID sure killing dose 1000 - 3000 mJ/cm2  | uses 30 mJ/cm2
                 dose = E*dis_pass_time/r                            # lamp 1.7W/cm lenght = 90 cm weight = 12.56 cm and 8 lamps-> 15373.44 W/cm2
-                self.dis_map.grid[line[len(line)-1][0]][line[len(line)-1][1]] += dose
+                self.dis_map.grid[wallCord[0]][wallCord[1]] += dose
 
     def Process(self):
         i = 0
         while(True):
             th = threading.Thread(target = self.CalculateDis)
             th.start()
-            time.sleep(1)
+            time.sleep(2)
             i += 1
             if(i == 20):
                 self.dis_map.PrintMap()
