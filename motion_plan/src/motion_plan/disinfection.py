@@ -44,10 +44,14 @@ class Disinfection:
         dy = -1*abs(wallCord[1] - self.dis_robot.onMapPosition[1])
         sy = 1 if self.dis_robot.onMapPosition[1] < wallCord[1] else -1
         err = dx+dy
-        while(True):
+        toEndCOunter = 101
+        while(toEndCOunter>0):
             line.append([x0, y0])
             if(x0 == x1 and y0 == y1):
-                break
+                toEndCOunter=40
+            if(not toEndCOunter <100):
+                toEndCOunter =101
+            toEndCOunter -= 1
             e2 = 2*err
             if(e2 >= dy):
                 err += dy
@@ -65,19 +69,28 @@ class Disinfection:
         self.dis_map.PublishMap(self.map_pub)
         for wallCord in self.loaded_map.walls:
             obstycle = False
-            line = self.AlgorithmBres(wallCord)           
+            line = self.AlgorithmBres(wallCord) 
+            xobs = 0
+            yobs = 0
             for i in range(0, len(line)-2):
                 mapPoint = self.loaded_map.grid[line[i][0]][line[i][1]]
                 if(mapPoint == 1):
                     obstycle = True
-                    break
+                    xobs=line[i][0]
+                    yobs = line[i][1]
+                if(obstycle):
+                    if(line[i][0] == wallCord[0] and line[i][1] == wallCord[1] and (line[i][0] == xobs or line[i][1]== yobs)):
+                        obstycle = False
+                        break
+                    elif (not(line[i][0] == xobs or line[i][1]== yobs)):
+                        break
             if(obstycle == False):
                 x = (self.dis_robot.onMapPosition[0] - wallCord[0])*self.dis_map.resolution
                 y = (self.dis_robot.onMapPosition[1] - wallCord[1])*self.dis_map.resolution
                 r = math.sqrt(x**2 + y**2)*100
                 dis_pass_time = time.time() - self.dis_start_time   # SARS killing dose 10-20 COVID sure killing dose 1000 - 3000 mJ/cm2  | uses 30 mJ/cm2
                 dose = E*dis_pass_time/r                            # lamp 1.7W/cm lenght = 90 cm weight = 12.56 cm and 8 lamps-> 15373.44 W/cm2
-                self.dis_map.grid[line[len(line)-1][0]][line[len(line)-1][1]] += dose
+                self.dis_map.grid[wallCord[0]][wallCord[1]] += dose
 
     def Process(self):
         i = 0
