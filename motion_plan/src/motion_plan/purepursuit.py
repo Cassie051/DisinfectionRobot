@@ -65,8 +65,7 @@ class PurePursuit:
         a = Kp * (target - current)
         return a
 
-    def RobotMove(self, a, delta, startTime):
-        dt = time.time() - startTime
+    def RobotMove(self, a, delta):
         self.robot.linear_vel_x = a
         self.robot.angular_z = self.robot.linear_vel_x / self.Lfc * math.tan(delta)
         self.msg.linear.x = self.robot.linear_vel_x
@@ -99,7 +98,6 @@ def main():
     result = mapsrv()
     loaded_map = Map(result.map.info.resolution, result.map.info.height, result.map.info.width, result.map.info.origin, result.map.data)
 
-    startTime = time.time()
     algorythm = PurePursuit(dis_robot, loaded_map)
     targetIndex, _ = algorythm.FindCurrentWaypoint()
     targetSpeed = 10.0 / 8
@@ -109,7 +107,7 @@ def main():
         ai = algorythm.ProportionalControl(targetSpeed, algorythm.robot.linear_vel_x)
         di, targetIndex = algorythm.Algorythm(targetIndex)
 
-        algorythm.RobotMove(ai, di, startTime)
+        algorythm.RobotMove(ai, di)
         algorythm.pub.publish(algorythm.msg)
     try:
         rospy.spin()

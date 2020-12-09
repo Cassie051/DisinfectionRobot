@@ -6,7 +6,7 @@ import os, math, time
 
 # parameters
 x_vel = 1
-ang_z = 0.4
+ang_z = math.pi/2
 
 
 def Round(msg):
@@ -17,12 +17,15 @@ def GoStright(msg):
     msg.linear.x = x_vel
 
 def TurnLeft(msg):
-    msg.angular.z = math.pi/2
-
-def TurnRight(msg):
+    msg.linear.x = 0.01
     msg.angular.z = -math.pi/2
 
+def TurnRight(msg):
+    msg.linear.x = 0.01
+    msg.angular.z = math.pi/2
+
 def TurnRound(msg):
+    msg.linear.x = 0.01
     msg.angular.z = -math.pi
 
 def Stop(msg):
@@ -32,23 +35,27 @@ def Stop(msg):
 def choseMove(pick, msg, pub):
     # go round
     if(pick == 'a'):
-        GoStright(msg)
-        Round(msg)
-        pub.publish(msg)
-        time.sleep(10)
+        while True:
+            Round(msg)
+            pub.publish(msg)
     # go stright 
     elif(pick == 'b'):
-        TurnLeft(msg)
-        pub.publish(msg)
-        GoStright(msg)
-        pub.publish(msg)
-        Stop(msg)
-        pub.publish(msg)
-        TurnRight(msg)
-        while True:    
-            GoStright(msg)
+        while True:   
             Stop(msg)
+            pub.publish(msg)
+            time.sleep(2)
+            
+            GoStright(msg)
+            pub.publish(msg)
+            time.sleep(4)
+            
+            Stop(msg)
+            pub.publish(msg)
+            time.sleep(2)
+            
             TurnRound(msg)
+            pub.publish(msg)
+            time.sleep(2)
     # wall follow
     elif(pick == 'c'):
         os.system("rosrun two-wheeled-robot-motion-planning follow_wall.py")
@@ -56,12 +63,11 @@ def choseMove(pick, msg, pub):
         print("Unknow option")
 
 if __name__ == '__main__':
-    rospy.init_node('robot_move')
-    msg = Twist()
-    pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-    chose = 'a'
-    choseMove(chose, msg, pub)
     try:
-        rospy.spin()
+        rospy.init_node('robot_move')
+        msg = Twist()
+        pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        chose = 'c'
+        choseMove(chose, msg, pub)
     except rospy.ROSInterruptException:
         pass
