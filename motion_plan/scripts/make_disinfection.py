@@ -1,10 +1,7 @@
 #! /usr/bin/env python
 
 import rospy
-from ..src.motion_plan.robot import Robot
-from ..src.motion_plan.mapy import Map
-from ..src.motion_plan.disinfection import Disinfection
-from ..src.motion_plan.move import ChoseMove
+import motion_plan.disinfection, motion_plan.move
 from geometry_msgs.msg import Twist
 from nav_msgs.srv import GetMap
 
@@ -13,13 +10,13 @@ def main():
         rospy.wait_for_service('static_map')
         mapsrv = rospy.ServiceProxy('static_map', GetMap)
         result = mapsrv()
-        dis_process = Disinfection(result)
+        dis_process = motion_plan.disinfection.Disinfection(result)
 
         msg = Twist()
         pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
-        chose = 'c'
-        ChoseMove(chose, msg, pub)
+        chose = 'b'
+        motion_plan.move.ChoseMove(chose, msg, pub)
         
         dis_process.Process()
         rospy.spin()

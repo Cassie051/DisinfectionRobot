@@ -47,7 +47,7 @@ def ChoseMove(pick, msg, pub):
             
             GoStright(msg)
             pub.publish(msg)
-            time.sleep(4)
+            time.sleep(5)
             
             Stop(msg)
             pub.publish(msg)
@@ -55,7 +55,7 @@ def ChoseMove(pick, msg, pub):
             
             TurnRound(msg)
             pub.publish(msg)
-            time.sleep(2)
+            time.sleep(1)
     # wall follow
     elif(pick == 'c'):
         os.system("rosrun two-wheeled-robot-motion-planning follow_wall.py")
