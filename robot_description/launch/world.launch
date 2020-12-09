@@ -12,6 +12,7 @@
   <!-- gmapping -->
   <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping">
     <param name="base_frame" value="link_chassis"/>
+    <param name="scan_topic"  value="/m2wr/laser/scan" />
   </node>  
 
   <!--Map Server-->

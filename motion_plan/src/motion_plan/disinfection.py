@@ -4,8 +4,8 @@ import rospy
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Odometry
 from nav_msgs.srv import GetMap
 from geometry_msgs.msg import Point, Quaternion, Pose
-from mapy import Map
-from robot import Robot
+from motion_plan.mapy import Map
+from motion_plan.robot import Robot
 from copy import deepcopy
 import math
 import time
