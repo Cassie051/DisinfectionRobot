@@ -32,7 +32,7 @@ def Stop(msg):
     msg.angular.x, msg.angular.y, msg.angular.z = 0, 0, 0
     msg.linear.x, msg.linear.y, msg.linear.z = 0, 0, 0
 
-def choseMove(pick, msg, pub):
+def ChoseMove(pick, msg, pub):
     # go round
     if(pick == 'a'):
         while True:
@@ -68,6 +68,6 @@ if __name__ == '__main__':
         msg = Twist()
         pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         chose = 'c'
-        choseMove(chose, msg, pub)
+        ChoseMove(chose, msg, pub)
     except rospy.ROSInterruptException:
         pass

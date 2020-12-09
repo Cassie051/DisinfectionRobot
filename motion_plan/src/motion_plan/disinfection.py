@@ -20,7 +20,7 @@ class Disinfection:
         self.loaded_map.FindWalls()
         self.dis_robot = Robot()
         self.dis_start_time = time.time()
-        rospy.init_node('disinfection', anonymous=True)
+        rospy.init_node('disinfection')
         self.map_pub = rospy.Publisher('/dis_map', OccupancyGrid)
 
     def __del__(self):
