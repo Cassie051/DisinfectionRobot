@@ -12,14 +12,16 @@ class Robot:
         self.onMapPosition = [0, 0]
         rospy.Subscriber('/odom', Odometry, self.UpdatePosition)
         # self.goalPointsonMap = [[754, 30], [804, 20], [808,40], [813, 80], [804, 119], [760, 86], [735, 80], [710, 87], [690, 82], [640,80], [636, 86], [473, 103]]
-        self.goalPointsonMap = [[804, 119], [710, 87], [473, 103]]
+        # self.goalPointsonMap = [[804, 119], [710, 87], [473, 103]]
         # self.goalPointsonMap.reverse
+        self.goalPointsonMap = []
 
     def __del__(self):
         del self.orientation
         del self.linear_vel_x
         del self.angular_z
         del self.onMapPosition
+        del self.goalPointsonMap
 
     def PrinPosition(self):
         print("Position XYZ: %f, %f, %f" %(self.position.x, self.position.y, self.position.y), end ="  ")
