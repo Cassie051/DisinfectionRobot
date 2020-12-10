@@ -10,8 +10,6 @@ from robot import Robot
 from mapy import Map
 from copy import deepcopy
 
-# Kp = 1.0
-k = 0
 
 
 class PurePursuit:
@@ -24,12 +22,15 @@ class PurePursuit:
         self.msg = Twist()
         self.CountCord()
         self.old_nearest_point_index = None
+        self.MoveTime = 0
 
     def __del__(self):
         del self.robot
+        del self.loaded_map
         del self.pub
         del self.Lfc
         del self.msg
+        del self.old_nearest_point_index
 
     def CountCord(self):
         self.robotCordX = int((self.robot.position.x - self.loaded_map.origin.position.x)/self.loaded_map.resolution)
@@ -53,7 +54,10 @@ class PurePursuit:
                 distanceToIndex = distanceNextIndex
             self.old_nearest_point_index = index
 
-        Lf = k * self.robot.linear_vel_x + self.Lfc 
+        execTime = time.time() - self.MoveTime
+        Lf = execTime * self.robot.linear_vel_x
+        if(Lf == 0):
+            Lf = self.Lfc
 
         while Lf > math.hypot(abs(self.robotCordX - self.robot.goalPointsonMap[index+1][0])/self.loaded_map.resolution, abs(self.robotCordY - self.robot.goalPointsonMap[index+1][1])/self.loaded_map.resolution):
             if(index + 1) >= len(self.robot.goalPointsonMap):

@@ -79,7 +79,7 @@ class Map:
     def SaveMap(self):
         max_grid = 30000000
         min_grid = 2
-        data_range = 99/(max_grid + 3 - min_grid)
+        data_range = 99/(max_grid  - min_grid)
         currentCell = 0
         while(currentCell < self.width * self.height):
             for y in range(self.height):
@@ -88,7 +88,7 @@ class Map:
                         self.data[currentCell] = 0
                     else:
                         if(int(self.grid[x][y]) >= max_grid):
-                            self.data[currentCell] = max_grid
+                            self.data[currentCell] = 99
                         else:
                             self.data[currentCell] = int(self.grid[x][y]*data_range)
                     currentCell+=1

@@ -38,8 +38,8 @@ class Disinfection:
     
     
     def CalculateDis(self):
-        # E = 15373.44
-        E = 30746.88
+        E = 15373.44 * 100
+        # E = 30746.88
         self.UpdateRobotPosition()
         self.dis_map.SaveMap()
         self.dis_map.PublishMap(self.map_pub)
@@ -126,8 +126,9 @@ class Disinfection:
         while True:
             di, targetIndex = algorythm.Algorythm(targetIndex)
 
-            algorythm.RobotMove( di)
+            algorythm.RobotMove(di)
             algorythm.pub.publish(algorythm.msg)
+            algorythm.MoveTime = time.time()
 
             # d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
             # while(d > 1.6):
@@ -142,8 +143,8 @@ if __name__ == '__main__':
         result = mapsrv()
 
         dis_process = Disinfection(result)
-        dis_process.DoPurepursuite()
-        # dis_process.Process()
+        # dis_process.DoPurepursuite()
+        dis_process.Process()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
