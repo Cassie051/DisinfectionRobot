@@ -36,45 +36,6 @@ class Disinfection:
         self.dis_robot.onMapPosition[0] = int(xcord)
         self.dis_robot.onMapPosition[1] = int(ycord)
     
-    def AlgorithmBres(self, wallCord, point):
-        line = []
-        x0, y0 = point[0], point[1]
-        x1, y1 = wallCord[0], wallCord[1]
-        dx = abs(wallCord[0] - point[0])
-        sx = 1 if point[0] < wallCord[0] else -1
-        dy = -1*abs(wallCord[1] - point[1])
-        sy = 1 if point[1] < wallCord[1] else -1
-        err = dx+dy
-        toEndCOunter = 101
-        while(toEndCOunter>0):
-            line.append([x0, y0])
-            if(x0 == x1 and y0 == y1):
-                toEndCOunter=40
-            if(not toEndCOunter <100):
-                toEndCOunter =101
-            toEndCOunter -= 1
-            e2 = 2*err
-            if(e2 >= dy):
-                err += dy
-                x0 += sx
-            if(e2 <= dx):
-                err += dx
-                y0 += sy
-        return line
-
- 
-    def CalculateWayPoints(self):
-        check = 0
-        point = [323, 80]
-        for wallCord in self.loaded_map.walls:
-            if(check % 5 == 0):
-                line = self.AlgorithmBres(wallCord, point) 
-                for i in range(0, len(line)-2):
-                    if(line[i][0] == wallCord[0] and line[i][1] == wallCord[1]):
-                        if(line[i-40][0] !=  self.dis_robot.onMapPosition[0] and line[i-40][1] !=  self.dis_robot.onMapPosition[1]):
-                            self.dis_robot.goalPointsonMap.append([line[i-40][0], line[i-40][1]])
-            check += 1
-        self.dis_robot.goalPointsonMap.reverse
     
     def CalculateDis(self):
         # E = 15373.44
@@ -119,20 +80,56 @@ class Disinfection:
                 self.dis_map.PrintMap()
                 i = 0
 
+    def AlgorithmBres(self, wallCord, point):
+        line = []
+        x0, y0 = point[0], point[1]
+        x1, y1 = wallCord[0], wallCord[1]
+        dx = abs(wallCord[0] - point[0])
+        sx = 1 if point[0] < wallCord[0] else -1
+        dy = -1*abs(wallCord[1] - point[1])
+        sy = 1 if point[1] < wallCord[1] else -1
+        err = dx+dy
+        toEndCOunter = 101
+        while(toEndCOunter>0):
+            line.append([x0, y0])
+            if(x0 == x1 and y0 == y1):
+                toEndCOunter=40
+            if(not toEndCOunter <100):
+                toEndCOunter =101
+            toEndCOunter -= 1
+            e2 = 2*err
+            if(e2 >= dy):
+                err += dy
+                x0 += sx
+            if(e2 <= dx):
+                err += dx
+                y0 += sy
+        return line
+
+ 
+    def CalculateWayPoints(self):
+        check = 0
+        point = [323, 80]
+        for wallCord in self.loaded_map.walls:
+            if(check % 1 == 0):
+                line = self.AlgorithmBres(wallCord, point) 
+                for i in range(0, len(line)-2):
+                    if(line[i][0] == wallCord[0] and line[i][1] == wallCord[1]):
+                        if(line[i-50][0] !=  self.dis_robot.onMapPosition[0] and line[i-50][1] !=  self.dis_robot.onMapPosition[1]):
+                            self.dis_robot.goalPointsonMap.append([line[i-50][0], line[i-50][1]])
+            check += 1
+
     def DoPurepursuite(self):
         algorythm = motion_plan.purepursuit.PurePursuit(self.dis_robot, self.loaded_map)
         targetIndex, _ = algorythm.FindCurrentWaypoint()
-        # targetSpeed = 10.0 / 3
 
         while True:
-            # ai = algorythm.ProportionalControl(targetSpeed, algorythm.robot.linear_vel_x)
             di, targetIndex = algorythm.Algorythm(targetIndex)
 
             algorythm.RobotMove( di)
             algorythm.pub.publish(algorythm.msg)
 
             # d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
-
             # while(d > 1.6):
             #     algorythm.CountCord()
             #     d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
@@ -143,10 +140,9 @@ if __name__ == '__main__':
         rospy.wait_for_service('static_map')
         mapsrv = rospy.ServiceProxy('static_map', GetMap)
         result = mapsrv()
+        
         dis_process = Disinfection(result)
-
         dis_process.DoPurepursuite()
-
         # dis_process.Process()
         rospy.spin()
     except rospy.ROSInterruptException:
