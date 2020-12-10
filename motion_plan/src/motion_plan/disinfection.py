@@ -111,7 +111,7 @@ class Disinfection:
         check = 0
         point = [323, 80]
         for wallCord in self.loaded_map.walls:
-            if(check % 1 == 0):
+            if(check % 5 == 0):
                 line = self.AlgorithmBres(wallCord, point) 
                 for i in range(0, len(line)-2):
                     if(line[i][0] == wallCord[0] and line[i][1] == wallCord[1]):
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         rospy.wait_for_service('static_map')
         mapsrv = rospy.ServiceProxy('static_map', GetMap)
         result = mapsrv()
-        
+
         dis_process = Disinfection(result)
         dis_process.DoPurepursuite()
         # dis_process.Process()
