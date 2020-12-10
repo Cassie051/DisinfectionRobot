@@ -6,6 +6,7 @@ from nav_msgs.srv import GetMap
 from geometry_msgs.msg import Point, Quaternion, Pose
 from motion_plan.mapy import Map
 from motion_plan.robot import Robot
+import motion_plan.purepursuit
 from copy import deepcopy
 import math
 import time
@@ -70,9 +71,10 @@ class Disinfection:
                 line = self.AlgorithmBres(wallCord, point) 
                 for i in range(0, len(line)-2):
                     if(line[i][0] == wallCord[0] and line[i][1] == wallCord[1]):
-                        if(line[i-20][0] !=  self.dis_robot.onMapPosition[0] and line[i-20][1] !=  self.dis_robot.onMapPosition[1]):
-                            self.dis_robot.goalPointsonMap.append([line[i-20][0], line[i-20][1]])
+                        if(line[i-40][0] !=  self.dis_robot.onMapPosition[0] and line[i-40][1] !=  self.dis_robot.onMapPosition[1]):
+                            self.dis_robot.goalPointsonMap.append([line[i-40][0], line[i-40][1]])
             check += 1
+        self.dis_robot.goalPointsonMap.reverse
     
     def CalculateDis(self):
         # E = 15373.44
@@ -117,13 +119,35 @@ class Disinfection:
                 self.dis_map.PrintMap()
                 i = 0
 
+    def DoPurepursuite(self):
+        algorythm = motion_plan.purepursuit.PurePursuit(self.dis_robot, self.loaded_map)
+        targetIndex, _ = algorythm.FindCurrentWaypoint()
+        # targetSpeed = 10.0 / 3
+
+        while True:
+            # ai = algorythm.ProportionalControl(targetSpeed, algorythm.robot.linear_vel_x)
+            di, targetIndex = algorythm.Algorythm(targetIndex)
+
+            algorythm.RobotMove( di)
+            algorythm.pub.publish(algorythm.msg)
+
+            # d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
+
+            # while(d > 1.6):
+            #     algorythm.CountCord()
+            #     d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
+    
+
 if __name__ == '__main__':
     try:
         rospy.wait_for_service('static_map')
         mapsrv = rospy.ServiceProxy('static_map', GetMap)
         result = mapsrv()
         dis_process = Disinfection(result)
-        dis_process.Process()
+
+        dis_process.DoPurepursuite()
+
+        # dis_process.Process()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
