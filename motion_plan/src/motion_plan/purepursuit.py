@@ -6,8 +6,8 @@ import sys, time
 import numpy as np
 from geometry_msgs.msg import Twist
 from nav_msgs.srv import GetMap
-from robot import Robot
-from mapy import Map
+from motion_plan.robot import Robot
+from motion_plan.mapy import Map
 from copy import deepcopy
 
 
@@ -41,7 +41,11 @@ class PurePursuit:
             xDistance = [(abs(self.robotCordX - goal[0])/self.loaded_map.resolution) for goal in self.robot.goalPointsonMap]
             yDistance = [(abs(self.robotCordY - goal[1])/self.loaded_map.resolution) for goal in self.robot.goalPointsonMap]
             d = np.hypot(xDistance, yDistance)
-            index = np.argmin(d)
+            newd = []
+            for onedist in d:
+                if (onedist != 0):
+                    newd.append(d)
+            index = np.argmin(newd)
             self.old_nearest_point_index = index
         else:
             index = self.old_nearest_point_index

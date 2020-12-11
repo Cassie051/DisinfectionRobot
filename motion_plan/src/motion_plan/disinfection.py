@@ -16,13 +16,17 @@ class Disinfection:
     def __init__(self, mapresult):
         self.loaded_map = Map(mapresult.map.info.resolution, mapresult.map.info.height, mapresult.map.info.width, mapresult.map.info.origin, mapresult.map.data)
         self.dis_map = deepcopy(self.loaded_map)
+
+        self.testMap = deepcopy(self.loaded_map) # ONLY FOR
         self.loaded_map.ReadMap()
         self.loaded_map.FindWalls()
         self.dis_robot = Robot()
         self.dis_start_time = time.time()
         rospy.init_node('disinfection')
-        self.map_pub = rospy.Publisher('/dis_map', OccupancyGrid)
+        self.map_pub = rospy.Publisher('/dis_map', OccupancyGrid, queue_size=1)
         self.CalculateWayPoints()       # to update way points for pure pursuit in frirst init
+        self.ShowWayPointsOnMap()
+
 
     def __del__(self):
         del self.dis_map
@@ -115,9 +119,16 @@ class Disinfection:
                 line = self.AlgorithmBres(wallCord, point) 
                 for i in range(0, len(line)-2):
                     if(line[i][0] == wallCord[0] and line[i][1] == wallCord[1]):
-                        if(line[i-50][0] !=  self.dis_robot.onMapPosition[0] and line[i-50][1] !=  self.dis_robot.onMapPosition[1]):
-                            self.dis_robot.goalPointsonMap.append([line[i-50][0], line[i-50][1]])
+                        if(line[i-27][0] !=  self.dis_robot.onMapPosition[0] and line[i-27][1] !=  self.dis_robot.onMapPosition[1]):
+                            self.dis_robot.goalPointsonMap.append([line[i-27][0], line[i-27][1]])
             check += 1
+        
+
+    def ShowWayPointsOnMap(self):
+        for goal in self.dis_robot.goalPointsonMap:
+            self.testMap.grid[goal[0]][goal[1]] = 3000435453
+        self.testMap.SaveMap()
+        self.testMap.PublishMap(self.map_pub)
 
     def DoPurepursuite(self):
         algorythm = motion_plan.purepursuit.PurePursuit(self.dis_robot, self.loaded_map)
@@ -125,15 +136,15 @@ class Disinfection:
 
         while True:
             di, targetIndex = algorythm.Algorythm(targetIndex)
-
+            self.ShowWayPointsOnMap()
             algorythm.RobotMove(di)
             algorythm.pub.publish(algorythm.msg)
             algorythm.MoveTime = time.time()
 
-            # d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
-            # while(d > 1.6):
-            #     algorythm.CountCord()
-            #     d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
+            d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
+            while(d > 1.6):
+                algorythm.CountCord()
+                d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
     
 
 if __name__ == '__main__':
@@ -143,8 +154,8 @@ if __name__ == '__main__':
         result = mapsrv()
 
         dis_process = Disinfection(result)
-        # dis_process.DoPurepursuite()
-        dis_process.Process()
+        dis_process.DoPurepursuite()
+        # dis_process.Process()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass

@@ -5,12 +5,15 @@ from geometry_msgs.msg import Twist
 import os, math, time
 
 # parameters
-x_vel = 1
-ang_z = math.pi/2
+x_vel = 1.5
+t = 3.333
+
+ang_z = -math.pi/32
+vel_round = 0.1
 
 
 def Round(msg):
-    msg.linear.x = x_vel
+    msg.linear.x = vel_round
     msg.angular.z = ang_z
 
 def GoStright(msg):
@@ -25,7 +28,7 @@ def TurnRight(msg):
     msg.angular.z = math.pi/2
 
 def TurnRound(msg):
-    msg.linear.x = 0.01
+    msg.linear.x = 0.001
     msg.angular.z = -math.pi
 
 def Stop(msg):
@@ -47,7 +50,7 @@ def ChoseMove(pick, msg, pub):
             
             GoStright(msg)
             pub.publish(msg)
-            time.sleep(5)
+            time.sleep(t)
             
             Stop(msg)
             pub.publish(msg)
@@ -55,7 +58,7 @@ def ChoseMove(pick, msg, pub):
             
             TurnRound(msg)
             pub.publish(msg)
-            time.sleep(1)
+            time.sleep(1.05)
     # wall follow
     elif(pick == 'c'):
         os.system("rosrun two-wheeled-robot-motion-planning follow_wall.py")

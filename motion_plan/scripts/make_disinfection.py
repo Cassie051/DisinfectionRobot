@@ -13,9 +13,9 @@ def main():
         dis_process = motion_plan.disinfection.Disinfection(result)
 
         msg = Twist()
-        pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 
-        chose = 'b'
+        chose = 'a'
         motion_plan.move.ChoseMove(chose, msg, pub)
         
         dis_process.Process()
