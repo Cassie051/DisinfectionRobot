@@ -5,11 +5,11 @@ from geometry_msgs.msg import Twist
 import os, math, time
 
 # parameters
-x_vel = 1.5
-t = 3.333
+x_vel = 1
+t = 5
 
-ang_z = -math.pi/32
-vel_round = 0.1
+ang_z = -1
+vel_round = 1
 
 
 def Round(msg):
@@ -35,15 +35,17 @@ def Stop(msg):
     msg.angular.x, msg.angular.y, msg.angular.z = 0, 0, 0
     msg.linear.x, msg.linear.y, msg.linear.z = 0, 0, 0
 
-def ChoseMove(pick, msg, pub):
+def ChoseMove(pick, msg, pub, go):
     # go round
     if(pick == 'a'):
-        while True:
+        while go:
             Round(msg)
             pub.publish(msg)
+        Stop(msg)
+        pub.publish(msg)   
     # go stright 
     elif(pick == 'b'):
-        while True:   
+        while go[0]:   
             Stop(msg)
             pub.publish(msg)
             time.sleep(2)
@@ -59,6 +61,8 @@ def ChoseMove(pick, msg, pub):
             TurnRound(msg)
             pub.publish(msg)
             time.sleep(1.05)
+        Stop(msg)
+        pub.publish(msg) 
     # wall follow
     elif(pick == 'c'):
         os.system("rosrun two-wheeled-robot-motion-planning follow_wall.py")
@@ -71,6 +75,6 @@ if __name__ == '__main__':
         msg = Twist()
         pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         chose = 'c'
-        ChoseMove(chose, msg, pub)
+        ChoseMove(chose, msg, pub, True)
     except rospy.ROSInterruptException:
         pass

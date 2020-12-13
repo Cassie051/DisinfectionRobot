@@ -17,7 +17,7 @@ class PurePursuit:
         self.robot = robot
         self.loaded_map = loaded_map
         # self.Lf = 2
-        self.Lfc = 1
+        self.Lfc = 2
         self.pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         self.msg = Twist()
         self.CountCord()
@@ -38,20 +38,21 @@ class PurePursuit:
 
     def FindCurrentWaypoint(self):
         if self.old_nearest_point_index is None:
-            xDistance = [(abs(self.robotCordX - goal[0])/self.loaded_map.resolution) for goal in self.robot.goalPointsonMap]
-            yDistance = [(abs(self.robotCordY - goal[1])/self.loaded_map.resolution) for goal in self.robot.goalPointsonMap]
+            xDistance = [abs(self.robotCordX - goal[0])/self.loaded_map.resolution for goal in self.robot.goalPointsonMap]
+            yDistance = [abs(self.robotCordY - goal[1])/self.loaded_map.resolution for goal in self.robot.goalPointsonMap]
             d = np.hypot(xDistance, yDistance)
-            newd = []
-            for onedist in d:
-                if (onedist != 0):
-                    newd.append(d)
-            index = np.argmin(newd)
+            # newd = []
+            # for onedist in d:
+            #     if (onedist != 0):
+            #         newd.append(d)
+            # index = np.argmin(newd)
+            index = np.argmin(d)
             self.old_nearest_point_index = index
         else:
             index = self.old_nearest_point_index
-            distanceToIndex = math.hypot(abs(self.robotCordX - self.robot.goalPointsonMap[index][0])/self.loaded_map.resolution, abs(self.robotCordY - self.robot.goalPointsonMap[index][1])/self.loaded_map.resolution)
+            distanceToIndex = math.hypot((self.robotCordX - self.robot.goalPointsonMap[index][0])/self.loaded_map.resolution, (self.robotCordY - self.robot.goalPointsonMap[index][1])/self.loaded_map.resolution)
             while True:
-                distanceNextIndex = math.hypot(abs(self.robotCordX - self.robot.goalPointsonMap[index+1][0])/self.loaded_map.resolution, abs(self.robotCordY - self.robot.goalPointsonMap[index+1][1])/self.loaded_map.resolution)
+                distanceNextIndex = math.hypot((self.robotCordX - self.robot.goalPointsonMap[index+1][0])/self.loaded_map.resolution, (self.robotCordY - self.robot.goalPointsonMap[index+1][1])/self.loaded_map.resolution)
                 if distanceToIndex < distanceNextIndex:
                     break
                 index = index+1 if (index +1) < len(self.robot.goalPointsonMap) else index
@@ -59,11 +60,9 @@ class PurePursuit:
             self.old_nearest_point_index = index
 
         execTime = time.time() - self.MoveTime
-        Lf = execTime * self.robot.linear_vel_x
-        if(Lf == 0):
-            Lf = self.Lfc
+        Lf = execTime * self.robot.linear_vel_x + self.Lfc
 
-        while Lf > math.hypot(abs(self.robotCordX - self.robot.goalPointsonMap[index+1][0])/self.loaded_map.resolution, abs(self.robotCordY - self.robot.goalPointsonMap[index+1][1])/self.loaded_map.resolution):
+        while Lf > math.hypot((self.robotCordX - self.robot.goalPointsonMap[index+1][0])/self.loaded_map.resolution, (self.robotCordY - self.robot.goalPointsonMap[index+1][1])/self.loaded_map.resolution):
             if(index + 1) >= len(self.robot.goalPointsonMap):
                 break
             index += 1
@@ -71,9 +70,12 @@ class PurePursuit:
 
     def RobotMove(self, delta):
         self.robot.linear_vel_x = 0.1
-        self.robot.angular_z = delta
+        target = delta - self.robot.orientation[2]
+        while(target > math.pi or target < -1*math.pi):
+            target = target - np.sign(target)*math.pi
+        self.robot.angular_vel_z = target
         self.msg.linear.x = self.robot.linear_vel_x
-        self.msg.angular.z =  self.robot.angular_z
+        self.msg.angular.z =  self.robot.angular_vel_z
 
     def Algorythm(self, pIndex):
         self.CountCord()
@@ -85,9 +87,11 @@ class PurePursuit:
         if index < len(self.robot.goalPointsonMap):
             trajectory = self.robot.goalPointsonMap[index]
         else:  # toward goal
-            trajectory = self.robot.goalPointsonMap[-1]
-            index = len(self.robot.goalPointsonMap) - 1
+            trajectory = self.robot.goalPointsonMap[0]
+            self.old_nearest_point_index = None
 
-        alpha = math.atan2(abs(trajectory[1] - self.robotCordY)/self.loaded_map.resolution, abs(trajectory[0] - self.robotCordX)/self.loaded_map.resolution) - self.robot.angular_z ## YAW
+        print(trajectory)
+
+        alpha = math.atan2((trajectory[1] - self.robotCordY)/self.loaded_map.resolution, (trajectory[0] - self.robotCordX)/self.loaded_map.resolution) - self.robot.orientation[2] ## YAW
         delta = math.atan2(2.0 * self.Lfc *math.sin(alpha) / Lf, 1.0)
         return delta, index

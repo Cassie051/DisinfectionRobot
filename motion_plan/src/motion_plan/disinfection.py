@@ -25,7 +25,7 @@ class Disinfection:
         rospy.init_node('disinfection')
         self.map_pub = rospy.Publisher('/dis_map', OccupancyGrid, queue_size=1)
         self.CalculateWayPoints()       # to update way points for pure pursuit in frirst init
-        self.ShowWayPointsOnMap()
+        self.ShowWayPointsOnMap(None)
 
 
     def __del__(self):
@@ -42,11 +42,9 @@ class Disinfection:
     
     
     def CalculateDis(self):
-        E = 15373.44 * 100
+        E = 15373.44 * 10
         # E = 30746.88
         self.UpdateRobotPosition()
-        self.dis_map.SaveMap()
-        self.dis_map.PublishMap(self.map_pub)
         for wallCord in self.loaded_map.walls:
             obstycle = False
             line = self.AlgorithmBres(wallCord, self.dis_robot.onMapPosition) 
@@ -72,17 +70,44 @@ class Disinfection:
                 dis_pass_time = time.time() - self.dis_start_time   # SARS killing dose 10-20 COVID sure killing dose 1000 - 3000 mJ/cm2  | uses 30 mJ/cm2
                 dose = E*dis_pass_time/r                            # lamp 1.7W/cm lenght = 90 cm weight = 12.56 cm and 8 lamps-> 15373.44 W/cm2
                 self.dis_map.grid[wallCord[0]][wallCord[1]] += dose
+        self.dis_map.SaveMap()
+        self.dis_map.PublishMap(self.map_pub)
 
     def Process(self):
-        i = 0
-        while(True):
+        b30, b60, b90, b100 = False, False, False, False
+        while( not b100):
             th = threading.Thread(target = self.CalculateDis)
             th.start()
             time.sleep(1)
-            i += 1
-            if(i == 20):
-                self.dis_map.PrintMap()
-                i = 0
+
+            diswall = 0    
+            for wallCord in self.loaded_map.walls:
+                if(self.dis_map.grid[wallCord[0]][wallCord[1]] >= 30000000):
+                    diswall +=1
+            # 30 60 90 100
+            precent = diswall/len(self.loaded_map.walls) * 100
+            if(precent >= 30 and not b30):
+                passTime = time.time() - self.dis_start_time
+                print("30 %% dezynfekcji, czas %s s" % str(passTime))
+                b30 = True
+            elif(precent >= 60 and not b60):
+                passTime = time.time() - self.dis_start_time
+                print("60 %% dezynfekcji, czas %s s" % str(passTime))
+                b60 = True
+            elif(precent >= 90 and not b90):
+                passTime = time.time() - self.dis_start_time
+                print("90 %% dezynfekcji, czas %s s" % str(passTime))
+                b90 = True
+            elif(precent >= 100 and not b100):
+                passTime = time.time() - self.dis_start_time
+                print("100 %% dezynfekcji, czas %s s" % str(passTime))
+                b100 = True
+            # else:
+            #     passTime = time.time() - self.dis_start_time
+            #     if(int(passTime)%20 == 0):
+            #         print("Czas dezynfekcji %s s" % str(passTime))
+        return True
+            
 
     def AlgorithmBres(self, wallCord, point):
         line = []
@@ -124,27 +149,35 @@ class Disinfection:
             check += 1
         
 
-    def ShowWayPointsOnMap(self):
+    def ShowWayPointsOnMap(self, index):
+        i = 0
         for goal in self.dis_robot.goalPointsonMap:
             self.testMap.grid[goal[0]][goal[1]] = 3000435453
+            if(i == index):
+                self.testMap.grid[goal[0]][goal[1]] = 5000000
+            i += 1
         self.testMap.SaveMap()
         self.testMap.PublishMap(self.map_pub)
 
     def DoPurepursuite(self):
         algorythm = motion_plan.purepursuit.PurePursuit(self.dis_robot, self.loaded_map)
         targetIndex, _ = algorythm.FindCurrentWaypoint()
-
+        oldtarget = targetIndex
         while True:
             di, targetIndex = algorythm.Algorythm(targetIndex)
-            self.ShowWayPointsOnMap()
+            if(di == False):
+                break
+            if(targetIndex == oldtarget):
+                thmap = threading.Thread(target = self.ShowWayPointsOnMap, args=[targetIndex])
+                thmap.start()
             algorythm.RobotMove(di)
-            algorythm.pub.publish(algorythm.msg)
             algorythm.MoveTime = time.time()
-
-            d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
-            while(d > 1.6):
-                algorythm.CountCord()
-                d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
+            algorythm.pub.publish(algorythm.msg)
+            oldtarget = targetIndex
+            # d = math.hypot((algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
+            # while(d > algorythm.Lfc):
+            #     algorythm.CountCord()
+            #     d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
     
 
 if __name__ == '__main__':
@@ -155,7 +188,6 @@ if __name__ == '__main__':
 
         dis_process = Disinfection(result)
         dis_process.DoPurepursuite()
-        # dis_process.Process()
-        rospy.spin()
+
     except rospy.ROSInterruptException:
         pass
