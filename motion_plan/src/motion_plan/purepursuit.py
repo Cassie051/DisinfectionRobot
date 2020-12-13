@@ -20,7 +20,7 @@ class PurePursuit:
         self.Lfc = 0.5
         self.pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         self.msg = Twist()
-        self.old_nearest_point = None
+        self.old_nearest_point = []
         self.nearest_point = None
 
     def __del__(self):
@@ -46,7 +46,7 @@ class PurePursuit:
                     d = math.hypot((self.robot.onMapPosition[0] - goal[0])*self.loaded_map.resolution, 
                                     (self.robot.onMapPosition[1] - goal[1])*self.loaded_map.resolution)
                     if(self.Lfc < d):
-                        self.old_nearest_point = [-1, -1]
+                        self.old_nearest_point = [[-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1]]
                         self.nearest_point = goal
                         break
         else:
@@ -55,9 +55,10 @@ class PurePursuit:
             while distanceToIndex < self.Lfc:
                 self.SortGoals()
                 i = 0
-                while (self.robot.goalPointsonMap[i] == self.old_nearest_point or self.robot.goalPointsonMap[i] == self.nearest_point ):
+                while (self.robot.goalPointsonMap[i] in self.old_nearest_point or self.robot.goalPointsonMap[i] == self.nearest_point ):
                     i += 1
-                self.old_nearest_point = self.nearest_point
+                self.old_nearest_point.append(self.nearest_point)
+                self.old_nearest_point.pop(0)
                 self.nearest_point = self.robot.goalPointsonMap[i] 
                 distanceToIndex = math.hypot((self.robot.onMapPosition[0] - self.nearest_point[0])*self.loaded_map.resolution, 
                                             (self.robot.onMapPosition[1] - self.nearest_point[1])*self.loaded_map.resolution)
