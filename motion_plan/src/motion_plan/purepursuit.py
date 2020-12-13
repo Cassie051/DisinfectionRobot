@@ -22,7 +22,6 @@ class PurePursuit:
         self.msg = Twist()
         self.old_nearest_point = None
         self.nearest_point = None
-        self.MoveTime = 0
 
     def __del__(self):
         del self.robot
@@ -37,8 +36,7 @@ class PurePursuit:
         self.robot.goalPointsonMap.sort(key=lambda x:math.hypot(self.robot.onMapPosition[0] - x[0], self.robot.onMapPosition[1] - x[1]))
     
     def FindCurrentWaypoint(self):
-        # execTime = time.time() - self.MoveTime
-        Lf =  self.robot.linear_vel_x # + self.Lfc  * execTime 
+        Lf =  self.robot.linear_vel_x
         if(Lf == 0):
             Lf = 1
 
@@ -67,7 +65,7 @@ class PurePursuit:
 
     def RobotMove(self, delta):
         self.robot.linear_vel_x = 0.2
-        target = delta - self.robot.orientation[2]
+        target = delta
         while(target > math.pi or target < -1*math.pi):
             target = target - np.sign(target)*math.pi
         self.robot.angular_vel_z = target
@@ -77,7 +75,7 @@ class PurePursuit:
     def Algorythm(self):
         Lf = self.FindCurrentWaypoint()
 
-        alpha = math.atan2((self.nearest_point[1] - self.robot.onMapPosition[1])*self.loaded_map.resolution, 
-                            (self.nearest_point[0] - self.robot.onMapPosition[0])*self.loaded_map.resolution) - self.robot.orientation[2] ## YAW
+        alpha = math.atan2((self.robot.onMapPosition[1] - self.nearest_point[1] )*self.loaded_map.resolution, 
+                            (self.robot.onMapPosition[0] - self.nearest_point[0])*self.loaded_map.resolution) - self.robot.orientation[2] ## YAW
         delta = math.atan2(2.0 * self.Lfc *math.sin(alpha) / Lf, 1.0)
         return delta

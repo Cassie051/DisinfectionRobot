@@ -43,7 +43,6 @@ class Disinfection:
     
     def CalculateDis(self):
         E = 15373.44 * 10
-        # E = 30746.88
         self.UpdateRobotPosition()
         for wallCord in self.loaded_map.walls:
             obstycle = False
@@ -175,11 +174,10 @@ class Disinfection:
                 thmap = threading.Thread(target = self.ShowWayPointsOnMap, args=[algorythm.nearest_point])
                 thmap.start()
                 thmap.join()
+                print(algorythm.nearest_point)
                 i=0
             algorythm.RobotMove(di)
-            algorythm.MoveTime = time.time()
             algorythm.pub.publish(algorythm.msg)
-            oldtarget = algorythm.nearest_point
 
 
 if __name__ == '__main__':
