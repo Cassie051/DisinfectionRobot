@@ -24,8 +24,8 @@ class Disinfection:
         self.dis_start_time = time.time()
         rospy.init_node('disinfection')
         self.map_pub = rospy.Publisher('/dis_map', OccupancyGrid, queue_size=1)
-        self.CalculateWayPoints()       # to update way points for pure pursuit in frirst init
-        self.ShowWayPointsOnMap(None)
+        # self.CalculateWayPoints()       # to update way points for pure pursuit in frirst init
+        self.ShowWayPointsOnMap([-1, -1])
 
 
     def __del__(self):
@@ -141,6 +141,7 @@ class Disinfection:
         point = [323, 80]
         for wallCord in self.loaded_map.walls:
             if(check % 5 == 0):
+            # if(wallCord[0] % 10 == 0 or wallCord[1] % 10 ==0):
                 line = self.AlgorithmBres(wallCord, point) 
                 for i in range(0, len(line)-2):
                     if(line[i][0] == wallCord[0] and line[i][1] == wallCord[1]):
@@ -149,36 +150,37 @@ class Disinfection:
             check += 1
         
 
-    def ShowWayPointsOnMap(self, index):
+    def ShowWayPointsOnMap(self, point):
         i = 0
         for goal in self.dis_robot.goalPointsonMap:
-            self.testMap.grid[goal[0]][goal[1]] = 3000435453
-            if(i == index):
+            if(goal[0] == point[0] and goal[1] == point[1]):
                 self.testMap.grid[goal[0]][goal[1]] = 5000000
+            else:
+                self.testMap.grid[goal[0]][goal[1]] = 3000435453
             i += 1
         self.testMap.SaveMap()
         self.testMap.PublishMap(self.map_pub)
 
     def DoPurepursuite(self):
         algorythm = motion_plan.purepursuit.PurePursuit(self.dis_robot, self.loaded_map)
-        targetIndex, _ = algorythm.FindCurrentWaypoint()
-        oldtarget = targetIndex
+        self.UpdateRobotPosition()
+        algorythm.FindCurrentWaypoint()
+        self.ShowWayPointsOnMap(algorythm.nearest_point)
+        i = 0
         while True:
-            di, targetIndex = algorythm.Algorythm(targetIndex)
-            if(di == False):
-                break
-            if(targetIndex == oldtarget):
-                thmap = threading.Thread(target = self.ShowWayPointsOnMap, args=[targetIndex])
+            i += 1
+            self.UpdateRobotPosition()
+            di = algorythm.Algorythm()
+            if(i > 1000):
+                thmap = threading.Thread(target = self.ShowWayPointsOnMap, args=[algorythm.nearest_point])
                 thmap.start()
+                thmap.join()
+                i=0
             algorythm.RobotMove(di)
             algorythm.MoveTime = time.time()
             algorythm.pub.publish(algorythm.msg)
-            oldtarget = targetIndex
-            # d = math.hypot((algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
-            # while(d > algorythm.Lfc):
-            #     algorythm.CountCord()
-            #     d = math.hypot(abs(algorythm.robot.goalPointsonMap[targetIndex][0]-algorythm.robotCordX)/self.loaded_map.resolution, abs(algorythm.robot.goalPointsonMap[targetIndex][1]-algorythm.robotCordY)/self.loaded_map.resolution)
-    
+            oldtarget = algorythm.nearest_point
+
 
 if __name__ == '__main__':
     try:
