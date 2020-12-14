@@ -21,7 +21,7 @@ $ roslaunch robot_description world.launch
 Run program
 $ rosrun motion_plan make_disinfection.py
 ```
-# To test the particular module
+# To test the particular module:
 ```
 Keyborad move robot
 $ rosrun teleop_twist_keyboard teleop_twist_keyboard.py key_vel=cmd_vel
