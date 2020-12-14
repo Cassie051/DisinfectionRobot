@@ -76,6 +76,6 @@ if __name__ == '__main__':
         msg = Twist()
         pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         chose = 'c'
-        ChoseMove(chose, msg, pub, True, Null)
+        ChoseMove(chose, msg, pub, True, None)
     except rospy.ROSInterruptException:
         pass
