@@ -16,7 +16,6 @@ class PurePursuit:
     def __init__(self, robot, loaded_map):
         self.robot = robot
         self.loaded_map = loaded_map
-        # self.Lf = 2
         self.Lfc = 0.5
         self.pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         self.msg = Twist()
@@ -65,7 +64,7 @@ class PurePursuit:
         return Lf
 
     def RobotMove(self, delta):
-        self.robot.linear_vel_x = 0.2
+        self.robot.linear_vel_x = 0.1
         target = delta
         while(target > math.pi or target < -1*math.pi):
             target = target - np.sign(target)*math.pi

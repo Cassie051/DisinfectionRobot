@@ -16,11 +16,11 @@ def main():
         msg = Twist()
         pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         
-        chose = 'a'
+        chose = 'c'
         thd = threading.Thread(target = dis_process.Process)
         go = True
         tab = [go]
-        thm = threading.Thread(target = motion_plan.move.ChoseMove, args=(chose, msg, pub, tab))
+        thm = threading.Thread(target = motion_plan.move.ChoseMove, args=(chose, msg, pub, tab, dis_process))
         
         thd.start()
         thm.start()
@@ -28,7 +28,8 @@ def main():
         thd.join()
         tab[0] = False
         motion_plan.move.Stop(msg)
-        pub.publish(msg) 
+        pub.publish(msg)
+
     except rospy.ROSInterruptException:
         pass
 

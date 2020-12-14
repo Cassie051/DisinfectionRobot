@@ -16,22 +16,22 @@ class Disinfection:
     def __init__(self, mapresult):
         self.loaded_map = Map(mapresult.map.info.resolution, mapresult.map.info.height, mapresult.map.info.width, mapresult.map.info.origin, mapresult.map.data)
         self.dis_map = deepcopy(self.loaded_map)
-
-        self.testMap = deepcopy(self.loaded_map) # ONLY FOR
+        # self.testMap = deepcopy(self.loaded_map)
         self.loaded_map.ReadMap()
         self.loaded_map.FindWalls()
+
         self.dis_robot = Robot()
         self.dis_start_time = time.time()
         rospy.init_node('disinfection')
         self.map_pub = rospy.Publisher('/dis_map', OccupancyGrid, queue_size=1)
         # self.CalculateWayPoints()       # to update way points for pure pursuit in frirst init
-        self.ShowWayPointsOnMap([-1, -1])
-
+        self.endPurepursuit = True
 
     def __del__(self):
         del self.dis_map
         del self.dis_robot
         del self.loaded_map
+        del self.map_pub
 
     def UpdateRobotPosition(self):
         xcord = (self.dis_robot.position.x - self.loaded_map.origin.position.x)/self.loaded_map.resolution
@@ -83,7 +83,6 @@ class Disinfection:
             for wallCord in self.loaded_map.walls:
                 if(self.dis_map.grid[wallCord[0]][wallCord[1]] >= 30000000):
                     diswall +=1
-            # 30 60 90 100
             precent = diswall/len(self.loaded_map.walls) * 100
             if(precent >= 30 and not b30):
                 passTime = time.time() - self.dis_start_time
@@ -101,10 +100,7 @@ class Disinfection:
                 passTime = time.time() - self.dis_start_time
                 print("100 %% dezynfekcji, czas %s s" % str(passTime))
                 b100 = True
-            # else:
-            #     passTime = time.time() - self.dis_start_time
-            #     if(int(passTime)%20 == 0):
-            #         print("Czas dezynfekcji %s s" % str(passTime))
+                self.endPurepursuit = False
         return True
             
 
@@ -140,7 +136,6 @@ class Disinfection:
         point = [323, 80]
         for wallCord in self.loaded_map.walls:
             if(check % 5 == 0):
-            # if(wallCord[0] % 10 == 0 or wallCord[1] % 10 ==0):
                 line = self.AlgorithmBres(wallCord, point) 
                 for i in range(0, len(line)-2):
                     if(line[i][0] == wallCord[0] and line[i][1] == wallCord[1]):
@@ -164,18 +159,9 @@ class Disinfection:
         algorythm = motion_plan.purepursuit.PurePursuit(self.dis_robot, self.loaded_map)
         self.UpdateRobotPosition()
         algorythm.FindCurrentWaypoint()
-        self.ShowWayPointsOnMap(algorythm.nearest_point)
-        i = 0
-        while True:
-            i += 1
-            self.UpdateRobotPosition()
+        while self.endPurepursuit:
+            # self.UpdateRobotPosition()
             di = algorythm.Algorythm()
-            if(i > 1000):
-                thmap = threading.Thread(target = self.ShowWayPointsOnMap, args=[algorythm.nearest_point])
-                thmap.start()
-                thmap.join()
-                print(algorythm.nearest_point)
-                i=0
             algorythm.RobotMove(di)
             algorythm.pub.publish(algorythm.msg)
 

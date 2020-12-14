@@ -3,6 +3,7 @@
 import rospy
 from geometry_msgs.msg import Twist
 import os, math, time
+import motion_plan.disinfection
 
 # parameters
 x_vel = 1
@@ -35,7 +36,7 @@ def Stop(msg):
     msg.angular.x, msg.angular.y, msg.angular.z = 0, 0, 0
     msg.linear.x, msg.linear.y, msg.linear.z = 0, 0, 0
 
-def ChoseMove(pick, msg, pub, go):
+def ChoseMove(pick, msg, pub, go, disinfection):
     # go round
     if(pick == 'a'):
         while go:
@@ -63,9 +64,9 @@ def ChoseMove(pick, msg, pub, go):
             time.sleep(1.05)
         Stop(msg)
         pub.publish(msg) 
-    # wall follow
+    # pure pursuit
     elif(pick == 'c'):
-        os.system("rosrun two-wheeled-robot-motion-planning follow_wall.py")
+        disinfection.DoPurepursuite()
     else:
         print("Unknow option")
 
@@ -75,6 +76,6 @@ if __name__ == '__main__':
         msg = Twist()
         pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         chose = 'c'
-        ChoseMove(chose, msg, pub, True)
+        ChoseMove(chose, msg, pub, True, Null)
     except rospy.ROSInterruptException:
         pass
