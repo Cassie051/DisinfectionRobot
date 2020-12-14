@@ -14,10 +14,11 @@ In [make_disinfection.py](motion_plan/scripts/make_disinfection.py) you can sele
 ```
 To make sure your workspace is properly overlayed by the setup script.
 $ source <catkin_ws>/devel/setup.sh
+
 Launching Gazebo&Rviz
 $ roslaunch robot_description world.launch
+
 Run program
-Test disinfection module
 $ rosrun motion_plan make_disinfection.py
 ```
 # To test the particular module
