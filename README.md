@@ -10,7 +10,7 @@ $ catkin_make
 ```
 
 # To use:
-In [make_disinfection.py](motion_plan/scripts/make_disinfection.py) you can select the way of a robot move.
+In [make_disinfection.py](motion_plan/scripts/make_disinfection.py) you can select the way of robot move.
 ```
 To make sure your workspace is properly overlayed by the setup script.
 $ source <catkin_ws>/devel/setup.sh
